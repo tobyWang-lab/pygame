@@ -22,24 +22,41 @@ clock=pygame.time.Clock()
 
 # 設定遊戲中的物件
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+	def __init__(self):
         # call sprite內建初始涵式
-        pygame.sprite.Sprite.__init__(self)
+		pygame.sprite.Sprite.__init__(self)
         # 定義所需顯示的圖片，下圖為pygame預設的平面 
-        self.image=pygame.Surface((50,40))
-        self.image.fill(GREEN)
-        # 定位圖片位置，將圖片框起來 
-        self.rect=self.image.get_rect()
+		self.image=pygame.Surface((50,40))
+		self.image.fill(GREEN)
+        # 定位圖片位置，將圖片框起來
+		self.rect=self.image.get_rect()
         # 設定圖片位置，下方xy為圖片左上角的座標，整個遊戲框架的左上角為(0,0)
-        self.rect.x=200
-        self.rect.y=200
+		self.rect.centerx = WIDTH/2
+		self.rect.bottom = HEIGHT-10
+		self.speedxy = 8
         # 將圖片設置在中央
         # self.rect.center=(WIDTH/2,HEIGHT/2)
-    
-    def update(self):
-        self.rect.x +=2
-        if self.rect.left>WIDTH:
-            self.rect.right=0
+	def update(self):
+		# get_pressed()會回傳一連串boolean值，有按則為True，反之則為False
+		#K_RIGHT即為右鍵、K_a即為a鍵、K_SPACE即為空白鍵
+		key_pressed=pygame.key.get_pressed()
+		if key_pressed[pygame.K_RIGHT]:
+			self.rect.x += self.speedxy
+		if key_pressed[pygame.K_LEFT]:
+			self.rect.x -= self.speedxy
+		if key_pressed[pygame.K_UP]:
+			self.rect.y -= self.speedxy
+		if key_pressed[pygame.K_DOWN]:
+			self.rect.y += self.speedxy
+		
+		if self.rect.right>WIDTH :
+			self.rect.right=WIDTH
+		if self.rect.left<0:
+			self.rect.left=0
+		if self.rect.bottom>HEIGHT:
+			self.rect.bottom=HEIGHT
+		if self.rect.top<0:
+			self.rect.top=0
 
 # 將遊戲中的物件加入至sprite群組當中
 all_sprites=pygame.sprite.Group()
@@ -73,4 +90,3 @@ while running:
     pygame.display.update()
 
 # 關閉
-pygame.quit()
