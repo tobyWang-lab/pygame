@@ -38,7 +38,7 @@ class Player(pygame.sprite.Sprite):
         # self.rect.center=(WIDTH/2,HEIGHT/2)
 	def update(self):
 		# get_pressed()會回傳一連串boolean值，有按則為True，反之則為False
-		#K_RIGHT即為右鍵、K_a即為a鍵、K_SPACE即為空白鍵
+		# K_RIGHT即為右鍵、K_a即為a鍵、K_SPACE即為空白鍵
 		key_pressed=pygame.key.get_pressed()
 		if key_pressed[pygame.K_RIGHT]:
 			self.rect.x += self.speedxy
@@ -88,5 +88,5 @@ while running:
     all_sprites.draw(screen)
 # 更新畫面
     pygame.display.update()
-
 # 關閉
+pygame.quit()
