@@ -88,5 +88,5 @@ while running:
     all_sprites.draw(screen)
 # 更新畫面
     pygame.display.update()
-# 關閉
+# 關閉1
 pygame.quit()
