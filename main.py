@@ -39,9 +39,11 @@ cut_img.save(os.path.join("img","cut_backgroung.jpg"))
 # background_img = pygame.image.load(os.path.join("img","backgroung.jpg")).convert()
 background_img = pygame.image.load(os.path.join("img","cut_backgroung.jpg")).convert()
 player_img = pygame.image.load(os.path.join("img","aircraft.png")).convert()
-rock_img = pygame.image.load(os.path.join("img","rock.png")).convert()
+# rock_img = pygame.image.load(os.path.join("img","rock.png")).convert()
 bullet_img = pygame.image.load(os.path.join("img","meteorite.png")).convert()
-
+rock_imgs=[]
+for i in range(4):
+	rock_imgs.append(pygame.image.load(os.path.join("img",f"rock{i}.png"),).convert())
 
 # 設定遊戲中的物件
 class Player(pygame.sprite.Sprite):
@@ -59,6 +61,9 @@ class Player(pygame.sprite.Sprite):
 		self.image.set_colorkey(BLACK) 
         # 定位圖片位置，將圖片框起來
 		self.rect=self.image.get_rect()
+		# 當碰撞判斷為圓型時，要設置半徑大小，並將圓形畫出來測試看看並調整，測試完即可註解掉
+		self.radius=self.rect.width/2*0.9
+		# pygame.draw.circle(self.image,GREEN, self.rect.center, self.radius)
         # 設定圖片位置，下方xy為圖片左上角的座標，整個遊戲框架的左上角為(0,0)
 		self.rect.centerx = WIDTH/2
 		self.rect.bottom = HEIGHT-10
@@ -95,12 +100,14 @@ class Rock(pygame.sprite.Sprite):
 	def __init__(self):
         # call sprite內建初始涵式
 		pygame.sprite.Sprite.__init__(self)
-		self.image = pygame.transform.scale(rock_img,(50,50))
-		self.image.set_colorkey(BLACK)
-
-
+		self.image_ori = pygame.transform.scale(random.choice(rock_imgs),(50,50))
+		self.image_ori.set_colorkey(BLACK)
+		self.image=self.image_ori.copy()
         # 定位圖片位置，將圖片框起來
 		self.rect=self.image.get_rect()
+		# 當碰撞判斷為圓型時，要設置半徑大小，並將圓形畫出來測試看看並調整，測試完即可註解掉
+		self.radius=self.rect.width/2*0.7
+		# pygame.draw.circle(self.image_ori, GREEN, self.rect.center, self.radius)
         # 設定圖片位置，下方xy為圖片左上角的座標，整個遊戲框架的左上角為(0,0)
 		self.rect.x = random.randrange(0,WIDTH-self.rect.width)
 		self.rect.y = random.randrange(-100,-40)
@@ -108,7 +115,30 @@ class Rock(pygame.sprite.Sprite):
 		self.speedx =random.randrange(-3,3)
         # 將圖片設置在中央
         # self.rect.center=(WIDTH/2,HEIGHT/2)
+		# 設置圖片每次更新轉的角度
+		self.total_degree=0
+		self.rot_degree=random.randrange(-3,3)
+	
+	# 透過函式將圖片旋轉
+	def rotate(self):
+		# pygame.transform.rotate(要旋轉的圖片,旋轉角度)
+		# 但由於轉動會有細微失真，更新的時候會使失真疊加導致圖片呈現不良
+		# 故要使失真不進行累加
+		# 為此在輸入照片地方在copy一份，並讓沒有失真的圖進行轉動
+		self.total_degree +=self.rot_degree
+		self.total_degree=self.total_degree%360
+		self.image = pygame.transform.rotate(self.image_ori,self.total_degree)
+		# 轉動時因都無重新定位，故轉動時會很奇怪
+		# 紀錄原先的中心定位
+		center = self.rect.center
+		# 取得新的定位
+		self.rect = self.image.get_rect()
+		# 將新定位的中心更新原有的紀錄
+		self.rect.center = center
+
+
 	def update(self):
+		self.rotate()
 		self.rect.y += self.speedy
 		self.rect.x += self.speedx
 		if self.rect.top>HEIGHT or self.rect.left>WIDTH or self.rect.right<0:
@@ -171,14 +201,16 @@ while running:
 	all_sprites.update()
 	# pygame.sprite.groupcollide可以判斷出兩個群組裡的sprite有無碰撞，
 	# 並回傳一個dictionary，裡面包括了兩個群組裡碰撞的sprite
-	# pygame.sprite.groupcollide(群組1,群組2,碰撞後群組1裡的sprite是否要kill(),碰撞後群組1裡的sprite是否要kill())
+	# pygame.sprite.groupcollide(群組1,群組2,碰撞後群組1裡的sprite是否要kill(),碰撞後群組1裡的sprite是否要kill(),使用圓形判斷預設為矩形)
+	# 此函式的碰撞判斷是使用舉行
 	hits=pygame.sprite.groupcollide(rocks,bullets,True,True)
 	for hits in hits:
 		r=Rock()
 		all_sprites.add(r)
 		rocks.add(r)
-
-	hits = pygame.sprite.spritecollide(player, rocks, False)
+	# 在pygame.sprite.spritecollide函式中加入參數pygame.sprite.collide_circle代表碰撞判斷是用圓形，預設為矩形
+	# 此外，加入此參數後要在物件1和群組2中加入圓形的半徑參數self.radius
+	hits = pygame.sprite.spritecollide(player,rocks,False,pygame.sprite.collide_circle)
 	if hits:
 		running = False
 # 畫面顯示
