@@ -45,6 +45,22 @@ rock_imgs=[]
 for i in range(4):
 	rock_imgs.append(pygame.image.load(os.path.join("img",f"rock{i}.png"),).convert())
 
+# 下面函式會從電腦裡找尋到對應的字體
+font_name=pygame.font.match_font('arial')
+
+# 參數一為字體要寫在哪個平面上
+def draw_text(surf,text,size,x,y):
+	font = pygame.font.Font(font_name,size)
+	# 將文字渲染出來
+	# 下方函式的第二個參數True，代表字體會用entire area，False則會用area
+	text_surface = font.render(text,True,WHITE)
+	# 定位字體
+	text_rect = text_surface.get_rect()
+	text_rect.centerx = x
+	text_rect.top = y
+	# 將字體畫出來
+	surf.blit(text_surface,text_rect)
+
 # 設定遊戲中的物件
 class Player(pygame.sprite.Sprite):
 	def __init__(self):
@@ -178,6 +194,8 @@ for i in range(8):
 	r=Rock()
 	all_sprites.add(r)
 	rocks.add(r)
+
+score = 0
 running=True
 
 # 遊戲迴圈
@@ -200,12 +218,14 @@ while running:
 	#取得sprite群組裡所有物件的update函式
 	all_sprites.update()
 	# pygame.sprite.groupcollide可以判斷出兩個群組裡的sprite有無碰撞，
-	# 並回傳一個dictionary，裡面包括了兩個群組裡碰撞的sprite
+	# 並回傳一個dictionary，key是碰撞到的rock，value則是碰撞到的子彈，裡面包括了兩個群組裡碰撞的sprite
 	# pygame.sprite.groupcollide(群組1,群組2,碰撞後群組1裡的sprite是否要kill(),碰撞後群組1裡的sprite是否要kill(),使用圓形判斷預設為矩形)
-	# 此函式的碰撞判斷是使用舉行
+	# 此函式的碰撞判斷是使用矩形
 	hits=pygame.sprite.groupcollide(rocks,bullets,True,True)
 	for hits in hits:
 		r=Rock()
+		# 分數計算方式為石頭半徑越大，則分數越高
+		score+=int(hits.radius)
 		all_sprites.add(r)
 		rocks.add(r)
 	# 在pygame.sprite.spritecollide函式中加入參數pygame.sprite.collide_circle代表碰撞判斷是用圓形，預設為矩形
@@ -219,9 +239,10 @@ while running:
 	screen.fill(BLACK)
 	# 將圖放在畫面上
 	# screen.blit(放置圖片，位置)
-	screen.blit(background_img, (0,0))
+	screen.blit(background_img,(0,0))
 	# 將sprite群組裡所有遊戲物件放置在螢幕上
 	all_sprites.draw(screen)
+	draw_text(screen,str(score),20,20,10)
 # 更新畫面
 	pygame.display.update()
 # 關閉
