@@ -20,6 +20,9 @@ BLUE=(0,0,255)
 # 遊戲初始化
 pygame.init()
 
+# 音效初始化
+pygame.mixer.init()
+
 # 創建遊戲視窗，pygame.display.set_mode((寬度,高度))
 screen=pygame.display.set_mode((WIDTH,HEIGHT))
 
@@ -43,7 +46,21 @@ player_img = pygame.image.load(os.path.join("img","aircraft.png")).convert()
 bullet_img = pygame.image.load(os.path.join("img","meteorite.png")).convert()
 rock_imgs=[]
 for i in range(4):
-	rock_imgs.append(pygame.image.load(os.path.join("img",f"rock{i}.png"),).convert())
+	rock_imgs.append(pygame.image.load(os.path.join("img",f"rock{i}.png")).convert())
+
+# 載入音效
+shoot_sound = pygame.mixer.Sound(os.path.join("sound","laser2.mp3"))
+# explode_sound = [
+# 	pygame.mixer.Sound(os.path.join("sound","bomb2.mp3")),
+# 	pygame.mixer.Sound(os.path.join("sound","bomb.mp3"))
+# ]
+explode_sound = pygame.mixer.Sound(os.path.join("sound","bomb2.mp3"))
+# 載入背景音樂
+pygame.mixer.music.load(os.path.join("sound","BGM.mp3"))
+# 調整BGM大小聲，參數:0~1
+pygame.mixer.music.set_volume(0.3)
+
+
 
 # 下面函式會從電腦裡找尋到對應的字體
 font_name=pygame.font.match_font('arial')
@@ -111,6 +128,9 @@ class Player(pygame.sprite.Sprite):
 		bullet=Bullet(self.rect.centerx,self.rect.top)
 		all_sprites.add(bullet)
 		bullets.add(bullet)
+		shoot_sound.set_volume(0.5)
+		shoot_sound.play()
+
 
 class Rock(pygame.sprite.Sprite):
 	def __init__(self):
@@ -198,6 +218,9 @@ for i in range(8):
 score = 0
 running=True
 
+# 播放背景音樂
+# pygame.mixer.music.play(播放次數，若薇要無限次撥放則為-1)
+pygame.mixer.music.play(-1)
 # 遊戲迴圈
 while running:
 	# 此處代表一秒鐘最多只能執行幾次,也相當於帪數(一秒更新幾次畫面)
@@ -228,6 +251,11 @@ while running:
 		score+=int(hits.radius)
 		all_sprites.add(r)
 		rocks.add(r)
+		# random.choice(explode_sound).play()
+		# 設置音量大小，數值0~1
+		explode_sound.set_volume(0.5)
+		# 播放音效
+		explode_sound.play()
 	# 在pygame.sprite.spritecollide函式中加入參數pygame.sprite.collide_circle代表碰撞判斷是用圓形，預設為矩形
 	# 此外，加入此參數後要在物件1和群組2中加入圓形的半徑參數self.radius
 	hits = pygame.sprite.spritecollide(player,rocks,False,pygame.sprite.collide_circle)
