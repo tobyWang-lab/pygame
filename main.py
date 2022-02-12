@@ -275,3 +275,5 @@ while running:
 	pygame.display.update()
 # 關閉
 pygame.quit()
+
+#測試git連線
