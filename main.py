@@ -276,4 +276,4 @@ while running:
 # 關閉
 pygame.quit()
 
-#測試git連線
+#測試git連線並攥寫筆記
