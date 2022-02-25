@@ -1,4 +1,5 @@
 #sprite->遊戲中的元素
+from errno import ESTALE
 from typing import Tuple
 import pygame
 import random
@@ -48,6 +49,23 @@ bullet_img = pygame.image.load(os.path.join("img","meteorite.png")).convert()
 rock_imgs=[]
 for i in range(4):
 	rock_imgs.append(pygame.image.load(os.path.join("img",f"rock{i}.png")).convert())
+
+#載入爆炸動畫
+# 設定一個字典儲存大爆炸及小爆炸
+bump_anim={}
+# 子彈射到石頭產生的大爆炸
+bump_anim['large']=[]
+# 石頭撞到飛船產生的小爆炸
+bump_anim['small']=[]
+for j in range(1,10):
+	# 載入動畫所需圖片
+	bump_anim_img=pygame.image.load(os.path.join("img",f"bump0{j}.png")).convert()
+	bump_anim_img.set_colorkey(BLACK)
+	# 將連續的圖片以75*75的size矬存入大爆炸的list裡
+	bump_anim['large'].append(pygame.transform.scale(bump_anim_img,(75,75)))
+	bump_anim['small'].append(pygame.transform.scale(bump_anim_img,(25,25)))
+
+
 
 # 載入音效
 shoot_sound = pygame.mixer.Sound(os.path.join("sound","laser2.mp3"))
@@ -208,6 +226,40 @@ class Bullet(pygame.sprite.Sprite):
 			# kill()是sprite的函式之一，此函式會將此sprite從sprite群組中移除
 			self.kill()
 
+class Bump(pygame.sprite.Sprite):
+	def __init__(self,center,size):
+        # call sprite內建初始涵式
+		pygame.sprite.Sprite.__init__(self)
+		self.size=size
+		self.image=bump_anim[self.size][0]
+        # 定位圖片位置，將圖片框起來
+		self.rect=self.image.get_rect()
+		self.rect.center = center
+		# 目前刷新到第幾張圖片
+		self.frame =0
+		# 定義圖片刷新速度(單位:毫秒)
+		self.frame_rate=50
+		# 紀錄最後一次刷新圖片的時間
+		# 下方涵式會回傳從初始到現在所經過的毫秒數
+		self.last_update=pygame.time.get_ticks()
+
+
+	def update(self):
+		# 紀錄現在的時間
+		now = pygame.time.get_ticks()
+		# 如果現在的時間-上次刷新圖片的時間>刷新速度，即代表距離上次刷新的時間已經超過刷新速率，可以更新了
+		if now - self.last_update>=self.frame_rate:
+			self.last_update=now
+			self.frame+=1
+			if self.frame ==len(bump_anim[self.size]):
+				self.kill()
+			else:
+				self.image = bump_anim[self.size][self.frame]
+				# 重新定位圖片
+				center=self.rect.center
+				self.rect = self.image.get_rect()
+				self.rect.center=center
+
 # 新增石頭
 def new_rock():
 		r=Rock()
@@ -270,20 +322,28 @@ while running:
 	# pygame.sprite.groupcollide(群組1,群組2,碰撞後群組1裡的sprite是否要kill(),碰撞後群組1裡的sprite是否要kill(),使用圓形判斷預設為矩形)
 	# 此函式的碰撞判斷是使用矩形
 	hits=pygame.sprite.groupcollide(rocks,bullets,True,True)
-	for hits in hits:
+	for hit in hits:
 		# 分數計算方式為石頭半徑越大，則分數越高
-		score+=int(hits.radius)
+		score+=int(hit.radius)
 		new_rock()
 		# random.choice(explode_sound).play()
 		# 設置音量大小，數值0~1
 		explode_sound.set_volume(0.5)
 		# 播放音效
 		explode_sound.play()
+		explosion = Bump(hit.rect.center, 'large')
+		all_sprites.add(explosion)
+
+		
+
+
 	# 在pygame.sprite.spritecollide函式中加入參數pygame.sprite.collide_circle代表碰撞判斷是用圓形，預設為矩形
 	# 此外，加入此參數後要在物件1和群組2中加入圓形的半徑參數self.radius
 	hits = pygame.sprite.spritecollide(player,rocks,True,pygame.sprite.collide_circle)
-	for hits in hits:
-		player.health-=hits.radius
+	for hit in hits:
+		player.health-=hit.radius
+		explosion = Bump(hit.rect.center, 'small')
+		all_sprites.add(explosion)
 		new_rock()
 		if player.health<=0:
 			running = False
