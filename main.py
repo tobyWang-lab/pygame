@@ -1,4 +1,5 @@
 #sprite->遊戲中的元素
+from typing import Tuple
 import pygame
 import random
 import os
@@ -103,6 +104,9 @@ class Player(pygame.sprite.Sprite):
 		self.speedxy = 8
         # 將圖片設置在中央
         # self.rect.center=(WIDTH/2,HEIGHT/2)
+		#設定血量
+		self.health=100
+
 	def update(self):
 		# get_pressed()會回傳一連串boolean值，有按則為True，反之則為False
 		# K_RIGHT即為右鍵、K_a即為a鍵、K_SPACE即為空白鍵
@@ -204,6 +208,29 @@ class Bullet(pygame.sprite.Sprite):
 			# kill()是sprite的函式之一，此函式會將此sprite從sprite群組中移除
 			self.kill()
 
+# 新增石頭
+def new_rock():
+		r=Rock()
+		all_sprites.add(r)
+		rocks.add(r)
+
+# 血量
+def draw_blood(surf,hp,x,y):
+	if hp<0:
+		hp=0
+	# 血槽的長度
+	bar_length=100
+	# 血槽的寬度
+	bar_height=10
+	# 血槽內的hp
+	fill=bar_length*(hp/100)
+	# 血槽的外框，此處使用的是pygame內建的矩形pygame.Rect(x軸位置，y軸位置，)
+	outline_rect=pygame.Rect(x,y,bar_length,bar_height)
+	fill_rect=pygame.Rect(x,y,fill,bar_height)
+	pygame.draw.rect(surf,GREEN,fill_rect)
+	# 最後一個參數為像素
+	pygame.draw.rect(surf,WHITE,outline_rect,2)
+
 # 將遊戲中的物件加入至sprite群組當中
 all_sprites=pygame.sprite.Group()
 rocks=pygame.sprite.Group()
@@ -211,15 +238,13 @@ bullets=pygame.sprite.Group()
 player=Player()
 all_sprites.add(player)
 for i in range(8):
-	r=Rock()
-	all_sprites.add(r)
-	rocks.add(r)
+	new_rock()
 
 score = 0
 running=True
 
 # 播放背景音樂
-# pygame.mixer.music.play(播放次數，若薇要無限次撥放則為-1)
+# pygame.mixer.music.play(播放次數，若要無限次播放則為-1)
 pygame.mixer.music.play(-1)
 # 遊戲迴圈
 while running:
@@ -246,11 +271,9 @@ while running:
 	# 此函式的碰撞判斷是使用矩形
 	hits=pygame.sprite.groupcollide(rocks,bullets,True,True)
 	for hits in hits:
-		r=Rock()
 		# 分數計算方式為石頭半徑越大，則分數越高
 		score+=int(hits.radius)
-		all_sprites.add(r)
-		rocks.add(r)
+		new_rock()
 		# random.choice(explode_sound).play()
 		# 設置音量大小，數值0~1
 		explode_sound.set_volume(0.5)
@@ -258,9 +281,12 @@ while running:
 		explode_sound.play()
 	# 在pygame.sprite.spritecollide函式中加入參數pygame.sprite.collide_circle代表碰撞判斷是用圓形，預設為矩形
 	# 此外，加入此參數後要在物件1和群組2中加入圓形的半徑參數self.radius
-	hits = pygame.sprite.spritecollide(player,rocks,False,pygame.sprite.collide_circle)
-	if hits:
-		running = False
+	hits = pygame.sprite.spritecollide(player,rocks,True,pygame.sprite.collide_circle)
+	for hits in hits:
+		player.health-=hits.radius
+		new_rock()
+		if player.health<=0:
+			running = False
 # 畫面顯示
 	# 將畫面填滿，三個參數分別為R、G、B，範圍都是0~255
 	# screen.fill((R,G,B))
@@ -271,6 +297,8 @@ while running:
 	# 將sprite群組裡所有遊戲物件放置在螢幕上
 	all_sprites.draw(screen)
 	draw_text(screen,str(score),20,20,10)
+	# 畫出血量
+	draw_blood(screen,player.health,5,10)
 # 更新畫面
 	pygame.display.update()
 # 關閉
