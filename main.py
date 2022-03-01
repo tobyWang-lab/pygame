@@ -14,6 +14,7 @@ WIDTH=500
 HEIGHT=600
 
 BLACK=(0,0,0)
+
 WHITE=(255,255,255)
 GREEN=(0,255,0)
 RED=(255,0,0)
@@ -57,6 +58,8 @@ bump_anim={}
 bump_anim['large']=[]
 # 石頭撞到飛船產生的小爆炸
 bump_anim['small']=[]
+# player 玩家死掉產生的爆炸
+bump_anim['player']=[]
 for j in range(1,10):
 	# 載入動畫所需圖片
 	bump_anim_img=pygame.image.load(os.path.join("img",f"bump0{j}.png")).convert()
@@ -64,7 +67,11 @@ for j in range(1,10):
 	# 將連續的圖片以75*75的size矬存入大爆炸的list裡
 	bump_anim['large'].append(pygame.transform.scale(bump_anim_img,(75,75)))
 	bump_anim['small'].append(pygame.transform.scale(bump_anim_img,(25,25)))
-
+for k in range(1,8):
+	bump_anim_player=pygame.image.load(os.path.join("img",f"player_expl0{k}.png")).convert()
+	# print("img",f"player_expl0{k}.png")
+	bump_anim_player.set_colorkey(BLACK)
+	bump_anim['player'].append(pygame.transform.scale(bump_anim_player,(75,75)))
 
 
 # 載入音效
@@ -74,6 +81,8 @@ shoot_sound = pygame.mixer.Sound(os.path.join("sound","laser2.mp3"))
 # 	pygame.mixer.Sound(os.path.join("sound","bomb.mp3"))
 # ]
 explode_sound = pygame.mixer.Sound(os.path.join("sound","bomb2.mp3"))
+# 死亡音效
+die_sound = pygame.mixer.Sound(os.path.join("sound","player_expl.mp3"))
 # 載入背景音樂
 pygame.mixer.music.load(os.path.join("sound","BGM.mp3"))
 # 調整BGM大小聲，參數:0~1
@@ -341,12 +350,18 @@ while running:
 	# 此外，加入此參數後要在物件1和群組2中加入圓形的半徑參數self.radius
 	hits = pygame.sprite.spritecollide(player,rocks,True,pygame.sprite.collide_circle)
 	for hit in hits:
+		if player.health<=0:
+			# 死亡的時候使用爆炸
+			die=Bump(player.rect.center,'player')
+			all_sprites.add(die)
+			# 播放死亡音效
+			die_sound.play
+			# running = False
 		player.health-=hit.radius
 		explosion = Bump(hit.rect.center, 'small')
 		all_sprites.add(explosion)
 		new_rock()
-		if player.health<=0:
-			running = False
+		
 # 畫面顯示
 	# 將畫面填滿，三個參數分別為R、G、B，範圍都是0~255
 	# screen.fill((R,G,B))
@@ -356,7 +371,7 @@ while running:
 	screen.blit(background_img,(0,0))
 	# 將sprite群組裡所有遊戲物件放置在螢幕上
 	all_sprites.draw(screen)
-	draw_text(screen,str(score),20,20,10)
+	draw_text(screen,str(score),20,240,10)
 	# 畫出血量
 	draw_blood(screen,player.health,5,10)
 # 更新畫面
